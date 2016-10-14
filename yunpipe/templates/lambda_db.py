@@ -1,6 +1,8 @@
+from __future__ import print_function
+
 import boto3
 import json
-from __future__ import print_function
+
 
 #
 required_steps = {}
@@ -22,22 +24,27 @@ work_flow = {
     'steps': {
         'sq': {
             'inputs': {'': ''},
-            'outputs': {'out'}
+            'outputs': {'out'},
+            'taskDefinition': ''
         },
         'sum': {
             'inputs': {'inp': '#sq/out'},
-            'outputs': {'out'}
+            'outputs': {'out'},
+            'taskDefinition': ''
         },
         'count': {
             'inputs': {'inp': '#sq/out'},
-            'outputs': {'out'}
+            'outputs': {'out'},
+            'taskDefinition': ''
         },
         'avg': {
             'inputs': {'sum': '#sum/out', 'count': '#count/out'},
-            'outputs': {'out'}
+            'outputs': {'out'},
+            'taskDefinition': ''
         },
         'out': {
-            'inputs': {}
+            'inputs': {},
+            'taskDefinition': ''
         }
     }
 }
@@ -60,7 +67,7 @@ def find_new_records(oldImage, newImage):
     newImage
     '''
     res = {}
-    for key in newImage.keys():
+    for key in newImage:
         if key not in oldImage:
             res[key] = newImage[key]
     return res
@@ -71,8 +78,8 @@ def find_steps_to_start(newImage, newRecords):
     find new steps that could start based on newest update.
     '''
     res = []
-    for key in newRecords.keys():
-        for step in required_steps.keys():
+    for key in newRecords:
+        for step in required_steps:
             if key in required_steps[step]:
                 has_every_steps = True
                 for x in required_steps[step]:
@@ -85,10 +92,9 @@ def find_steps_to_start(newImage, newRecords):
 def start_docker_task(startList, newImage):
     for step in startList:
         info = {}
-        for id, source in work_flow['steps'][step]['inputs']:
-            tmp = source.split('/')
-            info[id] = newImage[tmp[0][1:]][tmp[1]]
-        # start lambda function
-        for k, v in info:
-            print(k)
-            print(v)
+        for para in work_flow['steps'][step]['inputs']:
+            tmp = work_flow['steps'][step]['inputs'][para].split('/')
+            info[para] = newImage[tmp[0][1:]][tmp[1]]
+        # start ecs container
+        
+        # addapt from previous lambda_run_task_template.py
