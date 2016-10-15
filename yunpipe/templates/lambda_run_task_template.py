@@ -10,6 +10,7 @@ ecs = boto3.client('ecs')
 ec2 = boto3.client('ec2')
 cw = boto3.client('cloudwatch')
 
+
 # maintain a set of container instance arn that isnot the instance_type wanted
 instances = set()
 
@@ -46,7 +47,7 @@ def get_instances_arns(cluster):
     return arns
 
 
-def start_task(cluster, memory):
+def start_task(cluster, memory, run_info):
     '''
     given a cluster and task required memory, return true if successfully start
     task.
@@ -66,7 +67,12 @@ def start_task(cluster, memory):
             if inc['remainingResources'] >= memory:
                 res = ecs.start_task(
                     taskDefinition='%(task_name)s',
-                    containerInstances=[inc['containerInstanceArn']])
+                    containerInstances=[inc['containerInstanceArn']],
+                    overrides={'containerOverrides':
+                        [{
+                            'environment':
+                            [{'name': 'info', 'value': run_info}]
+                        }]})
                 if len(res['failures']) == 0:
                     print('start tast at {}'.format(inc['containerInstanceArn']))
                     return True
@@ -110,19 +116,20 @@ def create_ec2():
 
 def lambda_handler(event, context):
     start_time = time()
+    info = json.dumps(event)
     # print("Received event: " + json.dumps(event, indent=2))
 
-    QueueUrl = '%(sqs)s'
-    sqs.send_message(QueueUrl=QueueUrl, MessageBody=json.dumps(event))
+    # QueueUrl = '%(sqs)s'
+    # sqs.send_message(QueueUrl=QueueUrl, MessageBody=json.dumps(event))
 
     print('run time {}'.format((time() - start_time)))
     # start task at given type of instance
-    if not start_task('default', %(memory)s):
+    if not start_task('default', %(memory)s, info):
         print('firest check run time {}'.format((time() - start_time)))
         ec2InstanceId = create_ec2()
         print('run time {}'.format((time() - start_time)))
 
-        while not start_task('default', %(memory)s):
+        while not start_task('default', %(memory)s, info):
             pass
 
     print('run time {}'.format((time() - start_time)))
