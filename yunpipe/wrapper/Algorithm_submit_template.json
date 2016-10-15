@@ -29,5 +29,21 @@
             "port": "",
             "protocol": ""
         }
+    ],
+    "inputs":
+    [
+        {
+            "id": "",
+            "type": "",
+            "rename": ""
+        }
+    ],
+    "outputs":
+    [
+        {
+            "id": "",
+            "type": "",
+            "output_binding": ""
+        }
     ]
 }
