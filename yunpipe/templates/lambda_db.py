@@ -4,16 +4,14 @@ import boto3
 import json
 
 
-#
+# needs to be generated
 required_steps = {}
 required_steps['sum'] = {'sq'}
 required_steps['count'] = {'sq'}
 required_steps['avg'] = {'sum', 'count'}
 required_steps['out'] = {'avg', 'sum', 'count'}
 
-#
-
-
+# needs to be generated
 work_flow = {
     'inputs': {
 
@@ -25,26 +23,26 @@ work_flow = {
         'sq': {
             'inputs': {'': ''},
             'outputs': {'out'},
-            'taskDefinition': ''
+            'sqs_arn': ''
         },
         'sum': {
             'inputs': {'inp': '#sq/out'},
             'outputs': {'out'},
-            'taskDefinition': ''
+            'sqs_arn': ''
         },
         'count': {
             'inputs': {'inp': '#sq/out'},
             'outputs': {'out'},
-            'taskDefinition': ''
+            'sqs_arn': ''
         },
         'avg': {
             'inputs': {'sum': '#sum/out', 'count': '#count/out'},
             'outputs': {'out'},
-            'taskDefinition': ''
+            'sqs_arn': ''
         },
         'out': {
             'inputs': {},
-            'taskDefinition': ''
+            'sqs_arn': ''
         }
     }
 }
@@ -96,5 +94,5 @@ def start_docker_task(startList, newImage):
             tmp = work_flow['steps'][step]['inputs'][para].split('/')
             info[para] = newImage[tmp[0][1:]][tmp[1]]
         # start ecs container
-        
+
         # addapt from previous lambda_run_task_template.py
