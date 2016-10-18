@@ -95,6 +95,8 @@ def start_docker_task(startList, newImage):
         info['step'] = step
         info['jobid'] = newImage['jobid']
         info['intermediate_s3'] = work_flow['intermediate_s3']
+        info['db_table'] = newImage['db_table']
+        info['outputs'] = work_flow['outputs']
         if step == 'OUT':
             # need to handle 'OUT' seperately
             # info['copy']: list of files to be copyed
