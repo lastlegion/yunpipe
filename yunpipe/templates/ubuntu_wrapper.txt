@@ -8,9 +8,9 @@ RUN apt-get update && apt-get install -y \
 
 RUN python3 -m pip install boto3
 
-RUN mkdir -p /ecs_container
+RUN mkdir -p %(work_dir)s
 
-WORKDIR /ecs_container
+WORKDIR %(work_dir)s
 
 COPY runscript.py runscript.py
 
