@@ -17,10 +17,10 @@ DOWNLOAD_FAILED = False
 UPLOAD_FAILED = False
 
 # user specified environment variable
-UPLOADBUCKET = os.getenv('output_s3_name')
-QUEUEURL = os.getenv('sqs')
+# UPLOADBUCKET = os.getenv('output_s3_name')
+# QUEUEURL = os.getenv('sqs')
 REGION = os.getenv('AWS_DEFAULT_REGION')
-NAME = os.getenv('NAME', default='%(name)s')
+# NAME = os.getenv('NAME', default='%(name)s')
 
 # User sepcified informations
 info = json.loads(os.getenv('info'))
@@ -44,7 +44,7 @@ metas = {'step', 'jobid', 'intermediate_s3', 'db_table', 'outputs'}
 # INPUT_PATH = '%(input)s'
 # OUTPUT_PATH = '%(output)s'
 
-WORK_DIR = '%(WORK_DIR)s'
+# WORK_DIR = '%(WORK_DIR)s'
 
 
 logger = logging.getLogger()
@@ -103,10 +103,18 @@ def download_folder(s3_folder, folder):
     pass
 
 
+# TODO:
+def generate_command(paras, command):
+    '''
+    based on the new information, generate run command
+    '''
+    return command.split()
+
+
 def run_program(paras):
     command = '%(command)s'
 
-    run_command = command.split()
+    run_command = generate_command(paras, command)
 
     call(run_command)
 
