@@ -14,8 +14,12 @@ from ..utils import get_true_or_false
 
 SUPPORTED_SYSTEM = {'ubuntu'}
 
+# TODO: change runscript_template: get info from info enviroment variable, update dynamoDB
+# TODO: get inputs and outputs from algorithm definition
+# TODO: 
 
-def generate_dockerfile(system_name, container_name):
+
+def generate_dockerfile(system_name, container_name, work_dir):
     '''
     generate the dockerfile content.
 
@@ -35,25 +39,23 @@ def generate_dockerfile(system_name, container_name):
         file_path = join(CLOUD_PIPE_TEMPLATES_FOLDER, 'ubuntu_wrapper.txt')
         with open(file_path, 'r') as myfile:
             dockerfile = myfile.read()
-    return dockerfile % {'container_name': container_name}
+    return dockerfile % {'container_name': container_name,
+                         'work_dir': work_dir}
 
 
-def show_dockerfile(system_name, container_name):
-    print(generate_dockerfile(system_name, container_name))
+def show_dockerfile(system_name, container_name, work_dir):
+    print(generate_dockerfile(system_name, container_name, work_dir))
 
 
-def generate_runscript(input_path, output_path, name, command):
+def generate_runscript(**kwargs):
     '''
     generate runscript that fetch information from sqs, handling
     download/upload file and run script.
 
-    :para input_path: input folder
-    :type: string
+    :para inputs: dict of input definition
+    :type: dict
 
-    :para output_path: output folder
-    :type: string
-
-    :para name: new docker image name
+    :para outputs: output definition
     :type: string
 
     :para command: run command of user's algorithm script
@@ -66,7 +68,7 @@ def generate_runscript(input_path, output_path, name, command):
     file_path = join(CLOUD_PIPE_TEMPLATES_FOLDER, 'runscript_template.txt')
     with open(file_path, 'r') as myfile:
         script = myfile.read()
-    return script % {'input': input_path, 'output': output_path, 'name': name, 'command': command}
+    return script % kwargs
 
 
 def show_runscript(input_path, output_path, name, command):
@@ -85,11 +87,11 @@ def describe_algorithm():
     info['system'] = input(
         'Please input which operating system your container is build on:\n')
     info['run_command'] = input(
-        'Please input the run command of your algorithm, substituting input file with "$input", output file/folder with "$output", using full path for executable. for example, sh /User/YX/run.sh $input -d $output:\n')
-    info['input_file_path'] = input(
-        'Please input full path to the folder where input file should be:\n')
-    info['output_file_path'] = input(
-        'Please input full path to the folder where output file should be:\n')
+        'Please input the basic run command of your algorithm\n')
+    # info['input_file_path'] = input(
+    #     'Please input full path to the folder where input file should be:\n')
+    # info['output_file_path'] = input(
+    #     'Please input full path to the folder where output file should be:\n')
     info['name'] = input(
         'Please input the name you want other user refer your algorithm as:\n')
     info['instance_type'] = input(
@@ -149,20 +151,21 @@ def wrapper(alg_info):
     algorithm
     :type: json
     '''
-    # generate runscript
-    if alg_info['input_file_path'][-1] != '/':
-        alg_info['input_file_path'] += '/'
-    if alg_info['output_file_path'][-1] != '/':
-        alg_info['output_file_path'] += '/'
 
+    # if alg_info['input_file_path'][-1] != '/':
+    #     alg_info['input_file_path'] += '/'
+    # if alg_info['output_file_path'][-1] != '/':
+    #     alg_info['output_file_path'] += '/'
+
+    # generate runscript
     # create a folder with name for dockerfile & runscript
     folder = join(CLOUD_PIPE_TMP_FOLDER, alg_info['name'])
     create_folder(folder)
 
     # generate runscript
-    runscript = generate_runscript(alg_info['input_file_path'], alg_info[
-                                   'output_file_path'], alg_info['name'],
-                                   alg_info['run_command'])
+    runscript = generate_runscript(inputs=alg_info['inputs'],
+                                   outputs=alg_info['outputs'],
+                                   command=alg_info['command'])
 
     run_file = join(folder, 'runscript.py')
     with open(run_file, 'w+') as tmpfile:
@@ -173,13 +176,14 @@ def wrapper(alg_info):
         print("not support %s yet." % alg_info['system'])
         return
     dockerfile = generate_dockerfile(
-        alg_info['system'], alg_info['container_name'])
+        alg_info['system'], alg_info['container_name'], alg_info['work_dir'])
 
     docker_file = join(folder, 'Dockerfile')
     with open(docker_file, 'w+') as tmpfile:
         tmpfile.write(dockerfile)
 
 
+# TODO
 def get_instance_type(alg_info):
     '''
     Based on the algorithm developer provided information, choose an
@@ -252,8 +256,8 @@ def generate_image_info(alg_info, container_name):
     rtype: json
     '''
     new_vars = []
-    new_vars.append({'name': 'output_s3_name', 'required': True})
-    new_vars.append({'name': 'sqs', 'required': True})
+    # new_vars.append({'name': 'output_s3_name', 'required': True})
+    # new_vars.append({'name': 'sqs', 'required': True})
     new_vars.append({'name': 'LOG_LVL', 'required': False})
     new_vars.append({'name': 'NAME', 'required': True})
     new_vars.append({'name': 'AWS_DEFAULT_REGION', 'required': True})
