@@ -11,6 +11,7 @@ import botocore.exceptions
 
 ALL_INPUTS = '%(inputs)s'
 ALL_OUTPUTS = '%(outputs)s'
+BASE_COMMAND = '%(baseCommand)s'
 
 MAX_TRY = 5
 DOWNLOAD_FAILED = False
@@ -112,9 +113,7 @@ def generate_command(paras, command):
 
 
 def run_program(paras):
-    command = '%(command)s'
-
-    run_command = generate_command(paras, command)
+    run_command = generate_command(paras, BASE_COMMAND)
 
     call(run_command)
 
