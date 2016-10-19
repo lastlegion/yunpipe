@@ -104,11 +104,63 @@ def download_folder(s3_folder, folder):
     pass
 
 
-# TODO:
 def generate_command(paras, command):
     '''
     based on the new information, generate run command
+    :para paras: input parameters passed into container
+    :type: dict
+
+    :para command:
+    :type: string
+
+    :rtype: list of string for the command
+    sample inputs:
+
+    baseCommand: echo
+    inputs:
+      example_flag:
+        type: boolean
+        inputBinding:
+          position: 1
+          prefix: -f
+      example_string:
+        type: string
+        inputBinding:
+          position: 3
+          prefix: --example-string
+      example_int:
+        type: int
+        inputBinding:
+          position: 2
+          prefix: -i
+          separate: false
+      example_file:
+        type: File?
+        inputBinding:
+          prefix: --file=
+          separate: false
+          position: 4
     '''
+    var = []
+    for key in paras:
+        if ALL_INPUTS[key]['type'] == 'boolean':
+            if paras[key] is True:
+                var.insert(ALL_INPUTS[key]['inputBinding']['position'],
+                           ALL_INPUTS[key]['inputBinding']['prefix'])
+        else:
+            if 'separate' in ALL_INPUTS[key]['inputBinding']:
+                if ALL_INPUTS[key]['inputBinding']['separate'] is False:
+                    s = ALL_INPUTS[key]['inputBinding']['prefix'] + paras[key]
+                    var.insert(ALL_INPUTS[key]['inputBinding']['position'], s)
+            else:
+                s = ALL_INPUTS[key]['inputBinding']['prefix'] + ' ' + paras[key]
+                var.insert(ALL_INPUTS[key]['inputBinding']['position'], s)
+
+    if len(var) != 0:
+        command = BASE_COMMAND + ' ' + ' '.join(var)
+    else:
+        command = BASE_COMMAND
+
     return command.split()
 
 
