@@ -26,8 +26,9 @@ def parse_commandLineTool(filepath):
         elif key == 'baseCommand':
             info[key] = ' '.join(raw[key])
         elif key == 'hints':
-            for i in raw[key]:
-                info[i] = deepcopy(raw[key][i])
+            for entry in raw[key]:
+                for k in entry:
+                    info[k] = deepcopy(entry[k])
         else:
             info[key] = deepcopy(raw[key])
     return info
