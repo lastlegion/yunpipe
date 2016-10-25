@@ -72,5 +72,6 @@ def parse_workflow(filepath):
                     elif k == 'run':
                         info[key][entry['id']][k] = entry['run']
 
-    # add new step OUT to the last
+    # add new step OUT to the steps
+
     return info
