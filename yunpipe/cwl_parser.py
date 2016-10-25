@@ -13,7 +13,7 @@ def parse_commandLineTool(filepath):
 
     :rtype: dict
     '''
-    with open('filepath') as f:
+    with open(filepath) as f:
         raw = safe_load(f)
 
     info = {}
@@ -40,7 +40,7 @@ def parse_workflow(filepath):
 
     :rtype: dict
     '''
-    with open('filepath') as f:
+    with open(filepath) as f:
         raw = safe_load(f)
 
     info = {}
@@ -51,6 +51,7 @@ def parse_workflow(filepath):
                 info[key][entry['id']] = \
                     {i: entry[i] for i in entry if i != 'id'}
         elif key == 'steps':
+            info[key] = {}
             for entry in raw[key]:
                 info[key][entry['id']] = {}
                 for k in entry:
@@ -69,3 +70,6 @@ def parse_workflow(filepath):
                             info[key][entry['id']][k].add(e['id'])
                     elif k == 'run':
                         info[key][entry['id']][k] = entry['run']
+
+    # add new step OUT to the last
+    return info
