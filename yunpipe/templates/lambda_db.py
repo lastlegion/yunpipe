@@ -17,7 +17,7 @@ work_flow = {
         'inp'
     },
     'outputs': {
-        'out1': {'#avg/out', '#sq/out', '#precompute/cb'}
+        'out': ['#avg/out', '#sq/out', '#precompute/cb']
     },
     'intermediate_s3': '',
     'steps': {
@@ -37,16 +37,18 @@ work_flow = {
             'lambda_arn': 'arn:aws:lambda:us-east-1:183351756044:function:start_avg'
         },
         'OUT': {
-            'inputs': {'out': {'#out'}},
+            'inputs': {'inp': '#outputs/out'},
             'lambda_arn': ''
         }
     }
 }
 
+metas = {}
 
 def lambda_handler(event, context):
     '''
     '''
+    print(json.dumps(event))
     record = event['Records'][0]
     if record['eventName'] == 'MODIFY':
         newRecords = find_new_records(record['dynamodb']['OldImage'], record['dynamodb']['NewImage'])
@@ -64,6 +66,7 @@ def find_new_records(oldImage, newImage):
     for key in newImage:
         if key not in oldImage:
             res[key] = newImage[key]
+    print('New record:' + json.dumps(res))
     return res
 
 
@@ -100,16 +103,22 @@ def start_docker_task(startList, newImage):
             continue
         for para in work_flow['steps'][step]['inputs']:
             tmp = work_flow['steps'][step]['inputs'][para].split('/')
-            info[para] = newImage[tmp[0][1:]][tmp[1]]
+            info[para] = {}
+            info[para]['bucket'] =\
+                newImage[tmp[0][1:]]['M'][tmp[1]]['M']['bucket']['S']
+            info[para]['key'] =\
+                newImage[tmp[0][1:]]['M'][tmp[1]]['M']['key']['S']
 
         # call lambda function to start ecs
         client = boto3.client('lambda')
-        response = client.invoke(FunctionName=work_flow[step]['lambda_arn'],
-                                 Payload=json.dumps(info).encode())
+        response = client.invoke(
+            FunctionName=work_flow['steps'][step]['lambda_arn'],
+            Payload=json.dumps(info).encode())
         while(response['StatusCode'] != 200):
             response = client.invoke(
-                FunctionName=work_flow[step]['lambda_arn'],
+                FunctionName=work_flow['steps'][step]['lambda_arn'],
                 Payload=json.dumps(info).encode())
+        print('started function ' + work_flow['steps'][step]['lambda_arn'])
 
         # addapt from previous lambda_run_task_template.py
 
