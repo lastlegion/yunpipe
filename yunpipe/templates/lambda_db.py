@@ -6,11 +6,10 @@ import json
 
 # needs to be generated
 required_steps = {}
-required_steps['sq'] = {'GLOBAL'}
-required_steps['sum'] = {'sq'}
-required_steps['count'] = {'sq'}
-required_steps['avg'] = {'sum', 'count'}
-required_steps['OUT'] = {'avg', 'sum', 'count'}
+required_steps['precompute'] = {'inputs'}
+required_steps['sum'] = {'precompute'}
+required_steps['avg'] = {'precompute'}
+required_steps['outputs'] = {'avg', 'sum', 'precompute'}
 
 # needs to be generated
 work_flow = {
@@ -18,32 +17,27 @@ work_flow = {
         'inp'
     },
     'outputs': {
-        'out'
+        'out1': {'#avg/out', '#sq/out', '#precompute/cb'}
     },
     'intermediate_s3': '',
     'steps': {
-        'sq': {
-            'inputs': {'inp': '#GLOBAL/inp'},
-            'outputs': {'out'},
-            'lambda_arn': ''
+        'precompute': {
+            'inputs': {'inp': '#inputs/inp'},
+            'outputs': {'sq', 'cb'},
+            'lambda_arn': 'arn:aws:lambda:us-east-1:183351756044:function:start_precompute'
         },
         'sum': {
-            'inputs': {'inp': '#sq/out'},
+            'inputs': {'inp': '#precompute/sq'},
             'outputs': {'out'},
-            'lambda_arn': ''
-        },
-        'count': {
-            'inputs': {'inp': '#sq/out'},
-            'outputs': {'out'},
-            'lambda_arn': ''
+            'lambda_arn': 'arn:aws:lambda:us-east-1:183351756044:function:start_sum'
         },
         'avg': {
-            'inputs': {'sum': '#sum/out', 'count': '#count/out'},
+            'inputs': {'inp': '#precompute/sq'},
             'outputs': {'out'},
-            'lambda_arn': ''
+            'lambda_arn': 'arn:aws:lambda:us-east-1:183351756044:function:start_avg'
         },
         'OUT': {
-            'inputs': {'out': {'#GLOBAL/out'}},
+            'inputs': {'out': {'#out'}},
             'lambda_arn': ''
         }
     }
@@ -53,11 +47,11 @@ work_flow = {
 def lambda_handler(event, context):
     '''
     '''
-    record = event['Records']
+    record = event['Records'][0]
     if record['eventName'] == 'MODIFY':
-        newRecords = find_new_records(record['OldImage'], record['NewImage'])
-        startList = find_steps_to_start(record['NewImage'], newRecords)
-        start_docker_task(startList, record['NewImage'])
+        newRecords = find_new_records(record['dynamodb']['OldImage'], record['dynamodb']['NewImage'])
+        startList = find_steps_to_start(record['dynamodb']['NewImage'], newRecords)
+        start_docker_task(startList, record['dynamodb']['NewImage'])
 
 
 def find_new_records(oldImage, newImage):
@@ -103,7 +97,7 @@ def start_docker_task(startList, newImage):
             # info['delete']: list of files to be deleted
 
             # TODO:
-            break
+            continue
         for para in work_flow['steps'][step]['inputs']:
             tmp = work_flow['steps'][step]['inputs'][para].split('/')
             info[para] = newImage[tmp[0][1:]][tmp[1]]
@@ -121,7 +115,7 @@ def start_docker_task(startList, newImage):
 
 
 old = {'jobid': '001'}
-new = {'jobid': '001', 'global': {'inp': {'global input'}}}
+new = {'jobid': '001', 'inputs': {'inp': {'inputs input'}}}
 
-new1 = {'jobid': '001', 'global': {'inp': {'global input'}},
+new1 = {'jobid': '001', 'inputs': {'inp': {'inputs input'}},
         'sq': {'out': {'sq output'}}}
