@@ -90,7 +90,7 @@ def start_docker_task(startList, newImage):
         info = {}
         info['step'] = step
         info['jobid'] = newImage['jobid']['S']
-        info['intermediate_s3'] = newImage['intermediate_s3']
+        info['intermediate_s3'] = newImage['intermediate_s3']['S']
         info['db_table'] = newImage['db_table']['S']
         if step == 'OUT':
             # need to handle 'OUT' seperately
