@@ -19,21 +19,20 @@ work_flow = {
     'outputs': {
         'out': ['#avg/out', '#sq/out', '#precompute/cb']
     },
-    'intermediate_s3': '',
     'steps': {
         'precompute': {
             'inputs': {'inp': '#inputs/inp'},
-            'outputs': {'sq', 'cb'},
+            'outputs': ['sq', 'cb'],
             'lambda_arn': 'arn:aws:lambda:us-east-1:183351756044:function:start_precompute'
         },
         'sum': {
             'inputs': {'inp': '#precompute/sq'},
-            'outputs': {'out'},
+            'outputs': ['out'],
             'lambda_arn': 'arn:aws:lambda:us-east-1:183351756044:function:start_sum'
         },
         'avg': {
             'inputs': {'inp': '#precompute/sq'},
-            'outputs': {'out'},
+            'outputs': ['out'],
             'lambda_arn': 'arn:aws:lambda:us-east-1:183351756044:function:start_avg'
         },
         'OUT': {
@@ -90,10 +89,9 @@ def start_docker_task(startList, newImage):
     for step in startList:
         info = {}
         info['step'] = step
-        info['jobid'] = newImage['jobid']
-        info['intermediate_s3'] = work_flow['intermediate_s3']
-        info['db_table'] = newImage['db_table']
-        info['outputs'] = work_flow['outputs']
+        info['jobid'] = newImage['jobid']['S']
+        info['intermediate_s3'] = newImage['intermediate_s3']
+        info['db_table'] = newImage['db_table']['S']
         if step == 'OUT':
             # need to handle 'OUT' seperately
             # info['copy']: list of files to be copyed
@@ -109,6 +107,8 @@ def start_docker_task(startList, newImage):
             info[para]['key'] =\
                 newImage[tmp[0][1:]]['M'][tmp[1]]['M']['key']['S']
 
+        # TODO: handle outputs
+        info['outputs'] = workflow['steps']['step']['outputs']
         # call lambda function to start ecs
         client = boto3.client('lambda')
         response = client.invoke(
