@@ -108,7 +108,7 @@ def start_docker_task(startList, newImage):
                 newImage[tmp[0][1:]]['M'][tmp[1]]['M']['key']['S']
 
         # TODO: handle outputs
-        info['outputs'] = workflow['steps']['step']['outputs']
+        info['outputs'] = work_flow['steps'][step]['outputs']
         # call lambda function to start ecs
         client = boto3.client('lambda')
         response = client.invoke(
@@ -119,12 +119,12 @@ def start_docker_task(startList, newImage):
                 FunctionName=work_flow['steps'][step]['lambda_arn'],
                 Payload=json.dumps(info).encode())
         print('started function ' + work_flow['steps'][step]['lambda_arn'])
-
+        print('payload:' + json.dumps(info))
         # addapt from previous lambda_run_task_template.py
 
 
-old = {'jobid': '001'}
-new = {'jobid': '001', 'inputs': {'inp': {'inputs input'}}}
+# old = {'jobid': '001'}
+# new = {'jobid': '001', 'inputs': {'inp': {'inputs input'}}}
 
-new1 = {'jobid': '001', 'inputs': {'inp': {'inputs input'}},
-        'sq': {'out': {'sq output'}}}
+# new1 = {'jobid': '001', 'inputs': {'inp': {'inputs input'}},
+#         'sq': {'out': {'sq output'}}}
