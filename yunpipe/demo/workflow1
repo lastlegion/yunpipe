@@ -1,0 +1,47 @@
+class: Workflow
+inputs:
+    - id: inp
+      type: FILE
+      required: yes
+outputs:
+    - id: out1
+      type: FILE
+      source: "#print1/out"
+    - id: out2
+      type: FILE
+      source: "#print2/out"
+steps:
+    - id: precompute
+      run: precompute.algorthm
+      inputs:
+        - id: inp
+          source: "#inp"
+      outputs:
+        - id: sq
+    - id: sum
+      run: sum.algorithm
+      inputs:
+        - id: inp
+          source: "#precompute/sq"
+      outputs:
+        - id: out
+    - id: avg
+      run: avg.algorithm
+      inputs:
+        - id: inp
+          source: "#precompute/sq"
+      outputs:
+        - id: out
+    - id: print1
+      run: print.algorithm
+      inputs:
+        - id: inp1
+          source: "#sum/out"
+    - id: print2
+      run: print.algorithm
+      inputs:
+        - id: inp1
+          source: "#avg/out"
+hints:
+    - output_s3: 
+    - intermediate_s3: 

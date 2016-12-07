@@ -1,0 +1,48 @@
+{
+    "name": "",
+    "class": "Algorithm",
+    "baseCommand": "python compute.py",
+    "label": "Example for one step, given a file where each line contains one number, outputs squares and cubes",
+    "inputs":
+    {
+        "inp": {
+            "type": "FILE",
+            "rename": "input.txt"
+            "required": true
+        }
+    }
+    "outputs":
+    {
+        "sq": {
+            "type": "FILE",
+            "outputBinding": "sq.txt"
+        },
+        "cb": {
+            "type": "FILE",
+            "outputBinding": "cube.txt"
+        }
+    },
+    "container_name": "",
+    "system": "ubuntu",
+    "work_dir": "/tmp/work",
+    "instance_type": "t2.micro",
+    "memory": 
+    {
+        "minimal": 50,
+        "suggested": 128,
+    },
+    "user_specified_environment_variables": 
+    [
+        {
+            "name": "seeds",
+            "required": true
+        }
+    ],
+    "port": 
+    [
+        {
+            "port": 9090,
+            "protocol": "tcp"
+        }
+    ]
+}
