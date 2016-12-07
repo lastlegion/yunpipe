@@ -4,7 +4,7 @@ import logging
 from subprocess import call
 import traceback
 from time import sleep
-from random import randomint
+from random import randint
 
 import boto3.session
 import botocore.exceptions
@@ -86,11 +86,13 @@ def download_file(para, value):
         try:
             s3.download_file(bucket, key, file)
             logger.info('donwloaded file')
+            break
         except botocore.exceptions.ClientError as err:
-            sleep(randomint(1, 30))
+            sleep(randint(1, 30))
             logger.debug(traceback.format_exc())
             logger.warn(err.response)
     else:
+        global DOWNLOAD_FAILED
         DOWNLOAD_FAILED = True
 
     return file
@@ -147,7 +149,9 @@ def generate_command(paras, command):
             if paras[key] is True:
                 var.insert(ALL_INPUTS[key]['inputBinding']['position'],
                            ALL_INPUTS[key]['inputBinding']['prefix'])
-        else:
+        elif 'rename' in ALL_INPUTS[key]:
+            pass
+        elif 'inputBinding' in ALL_INPUTS[key]:
             if 'separate' in ALL_INPUTS[key]['inputBinding']:
                 if ALL_INPUTS[key]['inputBinding']['separate'] is False:
                     s = ALL_INPUTS[key]['inputBinding']['prefix'] + paras[key]
@@ -179,17 +183,24 @@ def get_output(output_expression):
 
 
 def upload_file(para, output_file, outputs_info):
-    bucket = info['intermediate_s3'] + '/' + info['jobid'] + '/' + info['step']
+    bucket = info['intermediate_s3']
+    key = info['jobid'] + '/' + info['step'] + '/' + output_file
     for _ in range(0, MAX_TRY):
         try:
             s3.upload_file(output_file, bucket, output_file)
             logger.info('uploaded file')
+            break
         except botocore.exceptions.ClientError as err:
-            sleep(randomint(1, 30))
+            sleep(randint(1, 30))
             logger.debug(traceback.format_exc())
             logger.warn(err.response)
     else:
+        global UPLOAD_FAILED
         UPLOAD_FAILED = True
+        return
+    outputs_info[para] = {}
+    outputs_info[para]['key'] = key
+    outputs_info[para]['bucket'] = bucket
 
 
 # TODO
@@ -206,12 +217,12 @@ if __name__ == '__main__':
                 paras[key] = download_file(key, info[key])
                 if DOWNLOAD_FAILED is True:
                     # logging
-                    return
+                    exit(1)
             elif ALL_INPUTS[key]['type'] == 'FOLDER':
                 paras[key] = download_folder(key, info[key])
                 if DOWNLOAD_FAILED is True:
                     # logging
-                    return
+                    exit(1)
             else:
                 paras[key] = info[key]
 
@@ -222,17 +233,17 @@ if __name__ == '__main__':
     outputs_info = {}
     for key in info['outputs']:
         if ALL_OUTPUTS[key]['type'] == 'FILE':
-            output_file = get_output(ALL_OUTPUTS[key]['output_binding'])
+            output_file = get_output(ALL_OUTPUTS[key]['outputBinding'])
             upload_file(key, output_file, outputs_info)
             if UPLOAD_FAILED is True:
                 # logging
-                return
+                exit(1)
         elif ALL_OUTPUTS[key]['type'] == 'FOLDER':
-            output_file = get_output(ALL_OUTPUTS[key]['output_binding'])
+            output_file = get_output(ALL_OUTPUTS[key]['outputBinding'])
             upload_folder(key, output_file, outputs_info)
             if UPLOAD_FAILED is True:
                 # logging
-                return
+                exit(1)
         else:
             # TODO
             pass
@@ -248,7 +259,7 @@ if __name__ == '__main__':
                 ExpressionAttributeValues={':val': outputs_info})
             updated = True
         except botocore.exceptions.ClientError as err:
-            sleep(randomint(3, 30))
+            sleep(randint(3, 30))
 
 
 # def pull_files(message_URL):

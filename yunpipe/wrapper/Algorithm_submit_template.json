@@ -31,19 +31,17 @@
         }
     ],
     "inputs":
-    [
-        {
-            "id": "",
+    {
+        "inp": {
             "type": "",
             "rename": ""
         }
-    ],
+    },
     "outputs":
-    [
-        {
-            "id": "",
+    {
+        "out" :{
             "type": "",
             "output_binding": ""
         }
-    ]
+    }
 }

@@ -43,7 +43,7 @@ def generate_tracking(workflow):
             'lambda_arn': ''
         }
     }
-}
+
     '''
     res = {}
     for step in workflow['steps']:
@@ -51,3 +51,43 @@ def generate_tracking(workflow):
         for key in workflow['steps'][step]['inputs']:
             res[step].add(workflow['steps'][step]['inputs'][key].split('/')[0][1:])
     return res
+
+
+if __name__ =='__main__':
+    work_flow = \
+        {
+            'inputs': {
+                'inp'
+            },
+            'outputs': {
+                'out'
+            },
+            'intermediate_s3': '',
+            'steps': {
+                'sq': {
+                    'inputs': {'inp': '#inp'},
+                    'outputs': {'out'},
+                    'lambda_arn': ''
+                },
+                'sum': {
+                    'inputs': {'inp': '#sq/out'},
+                    'outputs': {'out'},
+                    'lambda_arn': ''
+                },
+                'count': {
+                    'inputs': {'inp': '#sq/out'},
+                    'outputs': {'out'},
+                    'lambda_arn': ''
+                },
+                'avg': {
+                    'inputs': {'sum': '#sum/out', 'count': '#count/out'},
+                    'outputs': {'out'},
+                    'lambda_arn': ''
+                },
+                'OUT': {
+                    'inputs': {'out': {'out'}},
+                    'lambda_arn': ''
+                }
+            }
+        }
+

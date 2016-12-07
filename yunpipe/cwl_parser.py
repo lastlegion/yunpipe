@@ -1,5 +1,6 @@
 from yaml import safe_load
 from copy import deepcopy
+import json
 
 '''
 parse descriptions of single algorithmic step or workflow to a dictionary that is used internally
@@ -66,12 +67,19 @@ def parse_workflow(filepath):
                                 info[key][entry['id']][k][e['id']] = \
                                     '#GLOBAL/' + e['source'][1:]
                     elif k == 'outputs':
-                        info[key][entry['id']][k] = set()
+                        info[key][entry['id']][k] = []
                         for e in entry[k]:
-                            info[key][entry['id']][k].add(e['id'])
+                            info[key][entry['id']][k].append(e['id'])
                     elif k == 'run':
                         info[key][entry['id']][k] = entry['run']
 
     # add new step OUT to the steps
 
     return info
+
+if __name__ == '__main__':
+    cml = parse_commandLineTool('demo/precompute.cwl')
+    print(json.dumps(cml, indent=4, sort_keys=True))
+
+    wf = parse_workflow('demo/workflow2')
+    print(json.dumps(wf, indent=4, sort_keys=True))

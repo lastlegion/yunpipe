@@ -165,7 +165,7 @@ def wrapper(alg_info):
     # generate runscript
     runscript = generate_runscript(inputs=alg_info['inputs'],
                                    outputs=alg_info['outputs'],
-                                   command=alg_info['command'])
+                                   command=alg_info['baseCommand'])
 
     run_file = join(folder, 'runscript.py')
     with open(run_file, 'w+') as tmpfile:

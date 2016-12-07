@@ -22,3 +22,17 @@ table.update_item(
     ExpressionAttributeValues={':val': {'key': 'bbb', 'bucket': '456'}}
 )
 
+
+table.put_item(Item={
+    'jobid': '07',
+    'intermediate_s3': 'container-clouds-intermediate',
+    'db_table': 'demo1'
+})
+
+GLOBAL = {'inp': {'key': 'nums.txt', 'bucket': 'container-clouds-input'}}
+
+table.update_item(
+    Key={'jobid': '07'},
+    UpdateExpression='SET inputs = :val',
+    ExpressionAttributeValues={':val': {'inp': {'key': 'nums.txt', 'bucket': 'container-clouds-input'}}}
+)
