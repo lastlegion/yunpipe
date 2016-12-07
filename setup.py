@@ -11,7 +11,7 @@ setup(name='yunpipe',
       author_email='wangyx2005@gmail.com',
 
       packages=find_packages(),
-      install_requires=['boto3', 'Haikunator'],
+      install_requires=['boto3', 'Haikunator', 'awscli'],
 
       license='Apache v2.0',
       # scripts=['bin/wrap', 'bin/setup_pipe'],

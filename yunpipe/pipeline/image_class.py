@@ -72,8 +72,8 @@ class image:
         for port_number in info['port']:
             self.port[port_number].add_default_port_mapping()
 
-        for name, value in info['variables'].items():
-            self.env_variable[name].init_var(value)
+        # for name, value in info['variables'].items():
+        #     self.env_variable[name].init_var(value)
 
         for name, value in credentials.items():
             self.env_variable[name].init_var(value)

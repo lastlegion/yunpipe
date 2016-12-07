@@ -146,8 +146,6 @@ def _get_role_arn(role_name):
 
 # lambda
 
-
-
 def gettime():
     return strftime('%Y-%m-%d_%H:%M:%s', gmtime())
 
@@ -156,7 +154,7 @@ def create_db(table_name):
     '''
     create table with name table_name for tracking progress
     '''
-    dsession.resource('dynamodb').create_table(
+    session.resource('dynamodb').create_table(
         TableName=table_name,
         KeySchema=[{'AttributeName': 'jobid', 'KeyType': 'HASH'}],
         AttributeDefinitions=[{'AttributeName': 'jobid', 'AttributeType': 'S'}],
@@ -171,3 +169,4 @@ def create_db(table_name):
         BatchSize=1,
         StartingPosition='TRIM_HORIZON'
     )
+

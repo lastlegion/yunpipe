@@ -8,8 +8,9 @@ from .. import CLOUD_PIPE_TEMPLATES_FOLDER
 from .. import CLOUD_PIPE_TMP_FOLDER
 from .. import CLOUD_PIPE_ALGORITHM_FOLDER
 from .. import create_folder
-from ..utils import get_int
-from ..utils import get_true_or_false
+# from ..utils import get_int
+# from ..utils import get_true_or_false
+# from ..cwl_parser import parse_commandLineTool
 
 
 SUPPORTED_SYSTEM = {'ubuntu'}
@@ -68,79 +69,12 @@ def generate_runscript(**kwargs):
     file_path = join(CLOUD_PIPE_TEMPLATES_FOLDER, 'runscript_template.txt')
     with open(file_path, 'r') as myfile:
         script = myfile.read()
+    print(json.dumps(kwargs))
     return script % kwargs
 
 
 def show_runscript(input_path, output_path, name, command):
     print(generate_runscript(input_path, output_path, name, command))
-
-
-def describe_algorithm():
-    '''
-    command line editor of the detailed information of algorithm container.
-
-    :rtype: json
-    '''
-    info = {}
-    info['container_name'] = input(
-        'Please input your containerized algorithm name:\n')
-    info['system'] = input(
-        'Please input which operating system your container is build on:\n')
-    info['run_command'] = input(
-        'Please input the basic run command of your algorithm\n')
-    # info['input_file_path'] = input(
-    #     'Please input full path to the folder where input file should be:\n')
-    # info['output_file_path'] = input(
-    #     'Please input full path to the folder where output file should be:\n')
-    info['name'] = input(
-        'Please input the name you want other user refer your algorithm as:\n')
-    info['instance_type'] = input(
-        'Please input one instance type on aws best fit running your algorithm. You can omit this:\n')
-
-    info['memory'] = {}
-    info['memory']['minimal'] = get_int(
-        'Please input the minimal memory requirement for running your algorithm in MB. You can omit this\n', 4)
-    info['memory']['suggested'] = get_int(
-        'Please input the suggested memory requirement for running your algorithm in MB:\n', None)
-    info['CPU'] = get_int(
-        'Please input the number of CPUs used for this algorithm. You can omit this if you already suggested an instance type.\n', 1)
-
-    info['user_specified_environment_variables'] = []
-    if get_true_or_false('Do you want to add variables you open to user? [y/n]'):
-        addmore = True
-        while addmore:
-            helper = {}
-            helper['name'] = input(
-                'Please input the variable name you open to user:\n')
-            helper['required'] = get_true_or_false(
-                'Is this a required variable? [y/n]: ')
-            addmore = get_true_or_false(
-                'Do you want to add more variables? [y/n]: ')
-            info['user_specified_environment_variables'].append(helper)
-
-    info['port'] = []
-    if get_true_or_false('Do you want to open port to user? [y/n]'):
-        addmore = True
-        while addmore:
-            helper = {}
-            response = ''
-            port = get_int(
-                'Please input the port number you open to user:\n', None)
-            if port in info['port']:
-                print('This port number has already been set\n')
-                continue
-            helper['port'] = port
-            while response != 'tcp' and response != 'udp':
-                response = input(
-                    'Please input the protocol of the port: [tcp/udp]\n')
-            helper['protocol'] = response
-            addmore = get_true_or_false(
-                'Do you want to add more ports? [y/n]:')
-            info['port'].append(helper)
-
-    # print(json.dumps(info, indent='    '))
-
-    return info
 
 
 def wrapper(alg_info):
@@ -165,7 +99,7 @@ def wrapper(alg_info):
     # generate runscript
     runscript = generate_runscript(inputs=alg_info['inputs'],
                                    outputs=alg_info['outputs'],
-                                   command=alg_info['baseCommand'])
+                                   baseCommand=alg_info['baseCommand'])
 
     run_file = join(folder, 'runscript.py')
     with open(run_file, 'w+') as tmpfile:
@@ -268,6 +202,8 @@ def generate_image_info(alg_info, container_name):
     alg_info['container_name'] = container_name
     if alg_info['instance_type'] == '':
         alg_info['instance_type'] = get_instance_type(alg_info)
+    if 'user_specified_environment_variables' not in alg_info:
+        alg_info['user_specified_environment_variables'] = []
     alg_info['user_specified_environment_variables'].extend(new_vars)
     return alg_info
 
@@ -306,8 +242,6 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='A tool to wrap your containers')
 
-    parser.add_argument('-d', '--describe', action='store_true',
-                        help='use command line editor to describe your algorithm')
     parser.add_argument('-f', '--files', nargs='+',
                         help='List json files to describe your algorithms')
     parser.add_argument('-s', '--show', action='store_true',
@@ -317,25 +251,11 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.describe is True and args.files is not None or \
-            args.describe is False and args.files is None:
-        print('please use either -d or -f flag')
+    if args.files is None or len(args.files) == 0:
+        print('please at lease input one file using -f flag')
         exit(0)
 
-    if args.describe:
-        alg = describe_algorithm()
-
-        if args.show:
-            print(json.dumps(alg, indent='    ', sort_keys=True))
-
-        if not get_true_or_false('Do you want to continue? [y/n]:', True):
-            exit(0)
+    for filepath in args.files:
+        alg = parse_commandLineTool(filepath)
 
         generate_all(alg, args)
-
-    else:
-        for file_name in args.files:
-            with open(file_name, 'r') as data_file:
-                alg = json.load(data_file)
-
-            generate_all(alg, args)

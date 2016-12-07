@@ -1,4 +1,4 @@
-name: precompute
+name: sum
 class: commandLineTool
 baseCommand: [python, compute.py]
 label: return the sum of input files
