@@ -72,7 +72,12 @@ def parse_workflow(filepath):
                             info[key][entry['id']][k].append(e['id'])
                     elif k == 'run':
                         info[key][entry['id']][k] = entry['run']
-
+        elif key == 'hints':
+            for entry in raw[key]:
+                for k in entry:
+                    info[k] = deepcopy(entry[k])
+        elif key == 'name':
+            info[key] = raw[key]
     # add new step OUT to the steps
 
     return info
