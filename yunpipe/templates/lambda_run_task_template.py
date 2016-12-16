@@ -119,9 +119,6 @@ def lambda_handler(event, context):
     info = json.dumps(event)
     # print("Received event: " + json.dumps(event, indent=2))
 
-    # QueueUrl = '%(sqs)s'
-    # sqs.send_message(QueueUrl=QueueUrl, MessageBody=json.dumps(event))
-
     print('run time {}'.format((time() - start_time)))
     # start task at given type of instance
     if not start_task('default', %(memory)s, info):

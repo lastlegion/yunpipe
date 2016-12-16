@@ -3,6 +3,7 @@ from zipfile import ZipFile
 import sys
 import os
 from time import gmtime, strftime
+from copy import deepcopy
 
 from botocore.exceptions import ClientError
 from haikunator import Haikunator
@@ -13,7 +14,10 @@ from . import session
 from .. import CLOUD_PIPE_ALGORITHM_FOLDER
 from .. import CLOUD_PIPE_TMP_FOLDER
 from .. import CLOUD_PIPE_TEMPLATES_FOLDER
+from ..cwl_parser import parse_workflow
 
+
+name_generator = Haikunator()
 
 LAMBDA_EXEC_ROLE_NAME = 'lambda_exec_role'
 
@@ -87,6 +91,64 @@ def _get_or_create_s3(name):
 # ecs
 # TODO: generate/retrieve task definition
 
+def get_image_info(name):
+    '''
+    based on the name of the user request, find the image inforomation
+    para name: algorithm name
+    type: string
+
+    rpara: the infomation of a algorithm, see
+    rtype: image_class.image_info
+    '''
+    # TODO: need to be rewrite down the road
+    file_name = name + '_commandLineTool'
+    file_path = os.path.join(CLOUD_PIPE_ALGORITHM_FOLDER, file_name)
+    with open(file_path, 'r') as tmpfile:
+        info = image(json.load(tmpfile))
+    return info
+
+
+def generate_task_definition(image_info, credentials):
+    '''
+    Based on the algorithm information and the user running information,
+    generate task definition
+    para image_info: all the required info for running the docker container
+    type: image_info class
+    para: user_info: passed in information about using the algorithm.
+    user_info: {'port' : [], 'variables' = {}}
+    type: json
+
+    rtype json
+    {
+        'taskDefinition': {
+            'taskDefinitionArn': 'string',
+            'containerDefinitions': [...],
+            'family': 'string',
+            'revision': 123,
+            'volumes': [
+                {
+                    'name': 'string',
+                    'host': {
+                        'sourcePath': 'string'
+                    }
+                },
+            ],
+            'status': 'ACTIVE'|'INACTIVE',
+            'requiresAttributes': [
+                {
+                    'name': 'string',
+                    'value': 'string'
+                },
+            ]
+        }
+    }
+    '''
+    image_info.init_all_variables(credentials)
+    task_def = image_info.generate_task()
+    task = session.client('ecs').register_task_definition(family=task_def[
+        'family'], containerDefinitions=task_def['containerDefinitions'])
+    # task name: task_def['family']
+    return task
 
 
 # iam
@@ -145,16 +207,79 @@ def _get_role_arn(role_name):
 
 
 # lambda
+def generate_lambda_db_code(required_steps, work_flow):
+    '''
+    '''
+    with open('lambda_db.txt', 'r') as tmpfile:
+        code = tmpfile.read()
+    return code % {'steps': required_steps, 'work_flow': work_flow}
+
+
+def generate_lambda_code_trigger_ecs(image, sys_info, task_name):
+    '''
+    generate lambda function code using lambda_run_task_template
+    para: image: the informations about using a image
+    type: image_class.image_info
+
+    para: sys_info: other system info, see _get_sys_info()
+    type: dict
+
+    rtype: string
+    '''
+    lambda_para = {}
+    lambda_para['instance_type'] = image.instance_type
+    lambda_para['memory'] = image.memory
+    lambda_para['task_name'] = task_name
+    lambda_para.update(sys_info)
+    file_path = os.path.join(CLOUD_PIPE_TEMPLATES_FOLDER,
+            'lambda_run_task_template.txt')
+    with open(file_path, 'r') as tmpfile:
+        code = tmpfile.read()
+    return code % lambda_para
+
+
+def create_deploy_package(lambda_code, zipname):
+    '''
+    generate the deploy package
+    '''
+    file_path = os.path.join(CLOUD_PIPE_TMP_FOLDER, 'lambda_function.py')
+    with open(file_path, 'w+') as run_file:
+        run_file.write(lambda_code)
+    with ZipFile(zipname, 'w') as codezip:
+        codezip.write(file_path, arcname='lambda_function.py')
+    os.remove(file_path)
+
+# TODO: config to correct role
+def create_lambda_func(zipname):
+    '''
+    create lambda function using a .zip deploy package
+    '''
+    # code = io.BytesIO()
+    # with ZipFile(code, 'w') as z:
+    #     with ZipFile(zipname, 'r') as datafile:
+    #         for file in datafile.namelist():
+    #             z.write(file)
+    with open(zipname, 'rb') as tmpfile:
+        code = tmpfile.read()
+    name = name_generator.haikunate()
+    role = _get_role_arn(LAMBDA_EXEC_ROLE_NAME)
+    res = session.client('lambda').create_function(FunctionName=name, Runtime='python2.7', Role=role, Handler='lambda_function.lambda_handler', Code={'ZipFile': code}, Timeout=LAMBDA_EXEC_TIME, MemorySize=128)
+
+    os.remove(zipname)
+
+    return res['FunctionArn']
+
 
 def gettime():
-    return strftime('%Y-%m-%d_%H:%M:%s', gmtime())
+    return strftime('%Y-%m-%d_%H-%M-%S', gmtime())
 
 
-def create_db(table_name):
+#dynamo db
+def create_db(table_name, lambda_arn):
     '''
     create table with name table_name for tracking progress
     '''
-    session.resource('dynamodb').create_table(
+    table = session.resource('dynamodb').create_table(
         TableName=table_name,
         KeySchema=[{'AttributeName': 'jobid', 'KeyType': 'HASH'}],
         AttributeDefinitions=[{'AttributeName': 'jobid', 'AttributeType': 'S'}],
@@ -162,11 +287,100 @@ def create_db(table_name):
         StreamSpecification={'StreamEnabled': True, 'StreamViewType': 'NEW_AND_OLD_IMAGES'}
     )
 
+    print(table.latest_stream_arn)
+
     # add dynamoDB Stream to lambda
     session.client('lambda').create_event_source_mapping(
-        EventSourceArn='',
-        FunctionName='',
+        EventSourceArn=table.latest_stream_arn,
+        FunctionName=lambda_arn,
         BatchSize=1,
         StartingPosition='TRIM_HORIZON'
     )
 
+
+# utils
+def get_sys_info():
+    '''
+    prepare the system information (non-task specific informations) including
+    ec2 image_id, key_pair, security_group, subnet_id, iam_name, region,
+    accout_id for making the lambda function.
+
+    rtype dict
+    '''
+    # TODO: need rewrite this function
+    info = {}
+    info['image_id'] = 'ami-8f7687e2'
+    info['iam_name'] = 'ecsInstanceRole'
+    info['subnet_id'] = 'subnet-d32725fb'
+    info['security_group'] = 'default'
+    info['key_pair'] = "wyx-cci"
+    info['region'] = "us-east-1"
+    info['account_id'] = "183351756044"
+    return info
+
+
+def main():
+    wf = parse_workflow(sys.argv[1])
+    print(json.dumps(wf, indent=4, sort_keys=True))
+
+    wf_info = {}
+    wf_info['inputs'] = wf['inputs']
+    wf_info['outputs'] = wf['outputs']
+    wf_info['output_s3'] = wf['output_s3']
+    wf_info['intermediate_s3'] = wf['intermediate_s3']
+
+    # create_db(wf['name'] + '_' + gettime())
+
+    wf_for_lambda = {}
+    # fix wf_for_lambda['outputs'] later
+    wf_for_lambda['outputs'] = {}
+    wf_for_lambda['outputs']['out'] = []
+    wf_for_lambda['steps'] = {}
+
+    required_steps = {}
+    for step in wf['steps']:
+        # set up ecs_task
+        cred = get_task_credentials()
+        print(json.dumps(cred))
+
+        image = get_image_info('sum')
+
+        task = generate_task_definition(image, cred)
+        print(task)
+
+        # generate lambda to trigger ecs
+        sys_info = get_sys_info()
+        code = generate_lambda_code_trigger_ecs(image, sys_info, task['taskDefinition']['family'])
+        zipname = os.path.join(CLOUD_PIPE_TMP_FOLDER, step + name_generator.haikunate() + '.zip')
+        create_deploy_package(code, zipname)
+        lambda_arn = create_lambda_func(zipname)
+
+        # build information for lambda_db
+        wf_for_lambda['steps'][step] = deepcopy(wf['steps'][step])
+        wf_for_lambda['steps']['run'] = lambda_arn
+        required_steps[step] = set()
+        for key in wf['steps'][step]['inputs']:
+            required_steps[step].add(wf['steps'][step]['inputs'][key].split('/')[0][1:])
+
+    print(str(wf_for_lambda))
+    print(required_steps)
+    # generate lambda to process dynamodb stream
+    code = generate_lambda_db_code(required_steps, wf_for_lambda)
+    zipname = os.path.join(CLOUD_PIPE_TMP_FOLDER, step + name_generator.haikunate() + '.zip')
+    create_deploy_package(code, zipname)
+    lambda_db_arn = create_lambda_func(zipname)
+
+    wf_info['db_table'] = wf['name'] + gettime()
+
+    create_db(wf_info['db_table'], lambda_db_arn)
+
+    # setup dynamodb, attach lambda function to it
+
+    # set up ecs_task
+    # cred = get_task_credentials()
+    # print(json.dumps(cred))
+
+    # info = get_image_info('sum')
+
+    # task = generate_task_definition(info, cred)
+    # print(task)

@@ -227,7 +227,7 @@ def generate_all(alg, args):
 
     info = generate_image_info(alg, container_name)
 
-    name = container_name.split('/')[-1] + '_info.json'
+    name = alg['name'] + '.' + alg['class']
 
     file_path = join(CLOUD_PIPE_ALGORITHM_FOLDER, name)
 

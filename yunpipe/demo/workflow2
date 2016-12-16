@@ -1,4 +1,6 @@
+name: wf2
 class: Workflow
+name: sum
 inputs:
     - id: inp
       type: FILE
@@ -41,6 +43,8 @@ steps:
           source: "#sum/out"
         - id: inp2
           source: "#avg/out"
+      outputs:
+        - id: out
 hints:
     - output_s3: 
     - intermediate_s3: 

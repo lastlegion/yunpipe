@@ -1,3 +1,4 @@
+name: wf1
 class: Workflow
 inputs:
     - id: inp
@@ -37,11 +38,15 @@ steps:
       inputs:
         - id: inp1
           source: "#sum/out"
+      outputs:
+        - id: out
     - id: print2
       run: print.algorithm
       inputs:
         - id: inp1
           source: "#avg/out"
+      outputs:
+        - id: out
 hints:
     - output_s3: 
     - intermediate_s3: 
