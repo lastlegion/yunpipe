@@ -84,7 +84,7 @@ def parse_workflow(filepath):
 
 
 def parse_job(filepath):
-        '''
+    '''
     :para filepath: a cwl file for a work flow job return a dictionary that used internally
     :type: file
 
@@ -100,6 +100,10 @@ def parse_job(filepath):
                 info[key] = {}
                 info[key]['key'] = raw[key]['hint']['key']
                 info[key]['bucket'] = raw[key]['hint']['bucket']
+        else:
+            info[key] = raw[key]
+
+    return info
 
 
 if __name__ == '__main__':
@@ -108,3 +112,6 @@ if __name__ == '__main__':
 
     wf = parse_workflow('demo/workflow2')
     print(json.dumps(wf, indent=4, sort_keys=True))
+
+    job = parse_job('demo/job1.yml')
+    print(json.dumps(job, indent=4, sort_keys=True))
