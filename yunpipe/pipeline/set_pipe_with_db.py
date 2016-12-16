@@ -14,6 +14,7 @@ from . import session
 from .. import CLOUD_PIPE_ALGORITHM_FOLDER
 from .. import CLOUD_PIPE_TMP_FOLDER
 from .. import CLOUD_PIPE_TEMPLATES_FOLDER
+from .. import YUNPIPE_WORKFLOW_FOLDER
 from ..cwl_parser import parse_workflow
 
 
@@ -366,13 +367,23 @@ def main():
     print(required_steps)
     # generate lambda to process dynamodb stream
     code = generate_lambda_db_code(required_steps, wf_for_lambda)
-    zipname = os.path.join(CLOUD_PIPE_TMP_FOLDER, step + name_generator.haikunate() + '.zip')
+    zipname = os.path.join(
+        CLOUD_PIPE_TMP_FOLDER, step + name_generator.haikunate() + '.zip')
     create_deploy_package(code, zipname)
     lambda_db_arn = create_lambda_func(zipname)
 
     wf_info['db_table'] = wf['name'] + gettime()
 
     create_db(wf_info['db_table'], lambda_db_arn)
+
+    filepath = os.path.join(
+        YUNPIPE_WORKFLOW_FOLDER,
+        wf['name'] + '.' + wf['class'])
+
+    with open(filepath, 'w+') as f:
+        json.dump(wf_info, f, indent=4, sort_keys=True)
+
+    print('Successfully set up work flow {}'.format(wf['name']))
 
     # setup dynamodb, attach lambda function to it
 
