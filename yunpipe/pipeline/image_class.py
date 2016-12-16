@@ -11,19 +11,6 @@ name_generator = Haikunator()
 
 
 class image:
-    class port_class:
-        def __init__(self, port_info):
-            '''
-            para: port_info: dict contains all port information
-            type: dict
-            '''
-            self.host_port = None
-            self.container_port = port_info['port']
-            self.protocol = port_info['protocol']
-
-        def add_default_port_mapping(self):
-            self.host_port = self.container_port
-
     class variable_class:
         def __init__(self, var):
             '''
@@ -48,7 +35,7 @@ class image:
         para info:
         type: json
         '''
-        self.memory = info['memory']['suggested']
+        self.memory = info['memory']
         self.name = info['name']
         self.image = info['container_name']
         self.instance_type = info['instance_type']
@@ -57,24 +44,18 @@ class image:
         self.port = {}
         self.env_variable = {}
 
-        for port_info in info['port']:
-            self.port[port_info['port']] = self.port_class(port_info)
+        # for port_info in info['port']:
+        #     self.port[port_info['port']] = self.port_class(port_info)
 
         for var in info['user_specified_environment_variables']:
             self.env_variable[var['name']] = self.variable_class(var)
 
-    def init_all_variables(self, info, credentials):
+    def init_all_variables(self, credentials):
         '''
         Based on the user information provided, initialize all the entries
         para info:
         type: json
         '''
-        for port_number in info['port']:
-            self.port[port_number].add_default_port_mapping()
-
-        # for name, value in info['variables'].items():
-        #     self.env_variable[name].init_var(value)
-
         for name, value in credentials.items():
             self.env_variable[name].init_var(value)
 
@@ -122,13 +103,13 @@ class image:
         template['containerDefinitions'][0]['cpu'] = 32
 
         # add port
-        for port in self.port.values():
-            if port.host_port is not None:
-                helper = {}
-                helper['hostPort'] = port.host_port
-                helper['containerPort'] = port.container_port
-                helper['protocol'] = port.protocol
-                template['containerDefinitions'][0]['portMappings'].append(helper)
+        # for port in self.port.values():
+        #     if port.host_port is not None:
+        #         helper = {}
+        #         helper['hostPort'] = port.host_port
+        #         helper['containerPort'] = port.container_port
+        #         helper['protocol'] = port.protocol
+        #         template['containerDefinitions'][0]['portMappings'].append(helper)
 
         # print(json.dumps(template['containerDefinitions'][0]['portMappings']))
 
