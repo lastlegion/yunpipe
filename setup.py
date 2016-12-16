@@ -20,6 +20,8 @@ setup(name='yunpipe',
               'wrap = yunpipe.scripts.wrap:main',
               'clean-up = yunpipe.pipeline.cleanup:main',
               'setup-pipe = yunpipe.scripts.setup_pipe:main',
+              'setup = yunpipe.pipeline.set_pipe_with_db:main',
+              'submit = yunpipe.pipeline.submit:main',
               'create-lambda-exec-role = yunpipe.pipeline.set_pipe:create_lambda_exec_role']
       },
       include_package_data=True,
