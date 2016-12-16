@@ -82,6 +82,26 @@ def parse_workflow(filepath):
 
     return info
 
+
+def parse_job(filepath):
+        '''
+    :para filepath: a cwl file for a work flow job return a dictionary that used internally
+    :type: file
+
+    :rtype: dict
+    '''
+    with open(filepath) as f:
+        raw = safe_load(f)
+
+    info = {}
+    for key in raw:
+        if isinstance(raw[key], dict):
+            if raw[key]['class'] == 'File':
+                info[key] = {}
+                info[key]['key'] = raw[key]['hint']['key']
+                info[key]['bucket'] = raw[key]['hint']['bucket']
+
+
 if __name__ == '__main__':
     cml = parse_commandLineTool('demo/precompute.cwl')
     print(json.dumps(cml, indent=4, sort_keys=True))
