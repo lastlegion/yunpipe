@@ -1,6 +1,6 @@
 inp:
   class: File
-  hint:
+  hints:
     key: nums.txt
     bucket: container-clouds-input
 in:

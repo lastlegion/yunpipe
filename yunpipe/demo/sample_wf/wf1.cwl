@@ -18,4 +18,4 @@ steps:
         - id: out
 hints:
     - output_s3: "container-clouds-output"
-    - intermediate_s3: "container-clouds-intermediate" 
+    - intermediate_s3: "container-clouds-intermediate"
