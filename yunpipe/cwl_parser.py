@@ -78,6 +78,8 @@ def parse_workflow(filepath):
                     info[k] = deepcopy(entry[k])
         elif key == 'name':
             info[key] = raw[key]
+        else:
+            info[key] = raw[key]
     # add new step OUT to the steps
 
     return info

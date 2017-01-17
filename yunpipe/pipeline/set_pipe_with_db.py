@@ -20,7 +20,9 @@ from ..cwl_parser import parse_workflow
 
 name_generator = Haikunator()
 
+LAMBDA_EXEC_TIME = 300
 LAMBDA_EXEC_ROLE_NAME = 'lambda_exec_role'
+LAMBDA_DYNAMO_STREAM_ROLE = 'lambda_dynamo_streams'
 
 LAMBDA_EXEC_ROLE = {
     "Statement": [
@@ -102,7 +104,7 @@ def get_image_info(name):
     rtype: image_class.image_info
     '''
     # TODO: need to be rewrite down the road
-    file_name = name + '_commandLineTool'
+    file_name = name + '.commandLineTool'
     file_path = os.path.join(CLOUD_PIPE_ALGORITHM_FOLDER, file_name)
     with open(file_path, 'r') as tmpfile:
         info = image(json.load(tmpfile))
@@ -211,7 +213,9 @@ def _get_role_arn(role_name):
 def generate_lambda_db_code(required_steps, work_flow):
     '''
     '''
-    with open('lambda_db.txt', 'r') as tmpfile:
+    file_path = os.path.join(
+        CLOUD_PIPE_TEMPLATES_FOLDER, 'lambda_db.txt')
+    with open(file_path, 'r') as tmpfile:
         code = tmpfile.read()
     return code % {'steps': required_steps, 'work_flow': work_flow}
 
@@ -251,7 +255,7 @@ def create_deploy_package(lambda_code, zipname):
     os.remove(file_path)
 
 # TODO: config to correct role
-def create_lambda_func(zipname):
+def create_lambda_func(zipname, policy_role):
     '''
     create lambda function using a .zip deploy package
     '''
@@ -263,7 +267,7 @@ def create_lambda_func(zipname):
     with open(zipname, 'rb') as tmpfile:
         code = tmpfile.read()
     name = name_generator.haikunate()
-    role = _get_role_arn(LAMBDA_EXEC_ROLE_NAME)
+    role = _get_role_arn(policy_role)
     res = session.client('lambda').create_function(FunctionName=name, Runtime='python2.7', Role=role, Handler='lambda_function.lambda_handler', Code={'ZipFile': code}, Timeout=LAMBDA_EXEC_TIME, MemorySize=128)
 
     os.remove(zipname)
@@ -344,7 +348,7 @@ def main():
         cred = get_task_credentials()
         print(json.dumps(cred))
 
-        image = get_image_info('sum')
+        image = get_image_info(step)
 
         task = generate_task_definition(image, cred)
         print(task)
@@ -354,7 +358,7 @@ def main():
         code = generate_lambda_code_trigger_ecs(image, sys_info, task['taskDefinition']['family'])
         zipname = os.path.join(CLOUD_PIPE_TMP_FOLDER, step + name_generator.haikunate() + '.zip')
         create_deploy_package(code, zipname)
-        lambda_arn = create_lambda_func(zipname)
+        lambda_arn = create_lambda_func(zipname, LAMBDA_EXEC_ROLE_NAME)
 
         # build information for lambda_db
         wf_for_lambda['steps'][step] = deepcopy(wf['steps'][step])
@@ -363,18 +367,25 @@ def main():
         for key in wf['steps'][step]['inputs']:
             required_steps[step].add(wf['steps'][step]['inputs'][key].split('/')[0][1:])
 
+        print('---- Successfully set up step {}----'.format(step))
+
     print(str(wf_for_lambda))
     print(required_steps)
+
     # generate lambda to process dynamodb stream
     code = generate_lambda_db_code(required_steps, wf_for_lambda)
     zipname = os.path.join(
         CLOUD_PIPE_TMP_FOLDER, step + name_generator.haikunate() + '.zip')
     create_deploy_package(code, zipname)
-    lambda_db_arn = create_lambda_func(zipname)
+    lambda_db_arn = create_lambda_func(zipname, LAMBDA_DYNAMO_STREAM_ROLE)
 
     wf_info['db_table'] = wf['name'] + gettime()
 
+    print('---- Successfully set up lambda function {} ----'.format(lambda_db_arn))
+
     create_db(wf_info['db_table'], lambda_db_arn)
+
+    print('---- Successfully set up dynamodb and lambda linkage ----')
 
     filepath = os.path.join(
         YUNPIPE_WORKFLOW_FOLDER,
@@ -383,7 +394,7 @@ def main():
     with open(filepath, 'w+') as f:
         json.dump(wf_info, f, indent=4, sort_keys=True)
 
-    print('Successfully set up work flow {}'.format(wf['name']))
+    print('---- Successfully set up work flow {} ----'.format(wf['name']))
 
     # setup dynamodb, attach lambda function to it
 

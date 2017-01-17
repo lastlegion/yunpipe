@@ -107,10 +107,10 @@ def create_ec2():
                         Threshold=1, ComparisonOperator='LessThanThreshold')
 
     # send the cloudwatch name and instance id for cleanup
-    message = {}
-    message['alarm_name'] = alarm_name
-    message['ec2InstanceId'] = instances[0].id
-    sqs.send_message(QueueUrl='%(alarm_sqs)s', MessageBody=json.dumps(message))
+    # message = {}
+    # message['alarm_name'] = alarm_name
+    # message['ec2InstanceId'] = instances[0].id
+    # sqs.send_message(QueueUrl='(alarm_sqs)s', MessageBody=json.dumps(message))
     return instances[0].id
 
 

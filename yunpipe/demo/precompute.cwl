@@ -20,12 +20,4 @@ hints:
     - work_dir: /tmp/work
 
     - instance_type: t2.micro
-    - memory:
-        - minimal: 50
-        - suggensted: 128
-    - port:
-        - port: 9090
-          protocol: tcp
-    - user_specified_environment_variables:
-        - name: seeds
-          required: true
+    - memory: 128

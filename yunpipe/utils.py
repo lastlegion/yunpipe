@@ -7,7 +7,7 @@ import os
 import errno
 import json
 
-from . import YUNPIPE_WORKFLOW_FOLDER
+# from . import YUNPIPE_WORKFLOW_FOLDER
 
 
 def get_full_path(path):
