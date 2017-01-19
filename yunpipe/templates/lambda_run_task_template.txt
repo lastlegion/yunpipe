@@ -70,6 +70,7 @@ def start_task(cluster, memory, run_info):
                     containerInstances=[inc['containerInstanceArn']],
                     overrides={'containerOverrides':
                         [{
+                            'name': '%(container_name)s',
                             'environment':
                             [{'name': 'info', 'value': run_info}]
                         }]})
@@ -117,7 +118,7 @@ def create_ec2():
 def lambda_handler(event, context):
     start_time = time()
     info = json.dumps(event)
-    # print("Received event: " + json.dumps(event, indent=2))
+    print("Received event: " + json.dumps(event, indent=2))
 
     print('run time {}'.format((time() - start_time)))
     # start task at given type of instance

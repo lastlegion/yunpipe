@@ -5,7 +5,6 @@ Utility functions for yunpipe
 import os.path
 import os
 import errno
-import json
 
 # from . import YUNPIPE_WORKFLOW_FOLDER
 
@@ -78,17 +77,3 @@ def get_int(message, default):
                 return int(response)
             except ValueError:
                 print('Please input integer value.')
-
-
-def get_workflow_info(name):
-    '''
-    retrieve work flow information using defined work flow name
-    :para: name: the name of the work flow
-    :type: string
-
-    rtype: dictionary
-    '''
-    filepath = os.path.join(YUNPIPE_WORKFLOW_FOLDER, name + '.Workflow')
-    with open(filepath, 'r') as f:
-        res = json.load(f)
-    return res

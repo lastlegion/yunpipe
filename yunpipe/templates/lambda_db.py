@@ -112,13 +112,13 @@ def start_docker_task(startList, newImage):
         # call lambda function to start ecs
         client = boto3.client('lambda')
         response = client.invoke(
-            FunctionName=work_flow['steps'][step]['lambda_arn'],
+            FunctionName=work_flow['steps'][step]['run'],
             Payload=json.dumps(info).encode())
         while(response['StatusCode'] != 200):
             response = client.invoke(
-                FunctionName=work_flow['steps'][step]['lambda_arn'],
+                FunctionName=work_flow['steps'][step]['run'],
                 Payload=json.dumps(info).encode())
-        print('started function ' + work_flow['steps'][step]['lambda_arn'])
+        print('started function ' + work_flow['steps'][step]['run'])
         print('payload:' + json.dumps(info))
         # addapt from previous lambda_run_task_template.py
 

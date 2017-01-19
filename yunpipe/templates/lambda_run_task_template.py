@@ -70,6 +70,7 @@ def start_task(cluster, memory, run_info):
                     containerInstances=[inc['containerInstanceArn']],
                     overrides={'containerOverrides':
                         [{
+                            'name': '%(container_name)s',
                             'environment':
                             [{'name': 'info', 'value': run_info}]
                         }]})

@@ -65,7 +65,7 @@ def parse_workflow(filepath):
                                     e['source']
                             else:
                                 info[key][entry['id']][k][e['id']] = \
-                                    '#GLOBAL/' + e['source'][1:]
+                                    '#inputs/' + e['source'][1:]
                     elif k == 'outputs':
                         info[key][entry['id']][k] = []
                         for e in entry[k]:
@@ -100,8 +100,8 @@ def parse_job(filepath):
         if isinstance(raw[key], dict):
             if raw[key]['class'] == 'File':
                 info[key] = {}
-                info[key]['key'] = raw[key]['hint']['key']
-                info[key]['bucket'] = raw[key]['hint']['bucket']
+                info[key]['key'] = raw[key]['hints']['key']
+                info[key]['bucket'] = raw[key]['hints']['bucket']
         else:
             info[key] = raw[key]
 

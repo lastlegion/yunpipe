@@ -4,7 +4,7 @@ from random import random
 from . import session
 from .set_pipe_with_db import gettime
 from ..cwl_parser import parse_job
-from ..utils import get_workflow_info
+from .. import get_workflow_info
 
 
 db = session.resource('dynamodb')

@@ -220,7 +220,7 @@ def generate_lambda_db_code(required_steps, work_flow):
     return code % {'steps': required_steps, 'work_flow': work_flow}
 
 
-def generate_lambda_code_trigger_ecs(image, sys_info, task_name):
+def generate_lambda_code_trigger_ecs(image, sys_info, task):
     '''
     generate lambda function code using lambda_run_task_template
     para: image: the informations about using a image
@@ -234,7 +234,8 @@ def generate_lambda_code_trigger_ecs(image, sys_info, task_name):
     lambda_para = {}
     lambda_para['instance_type'] = image.instance_type
     lambda_para['memory'] = image.memory
-    lambda_para['task_name'] = task_name
+    lambda_para['task_name'] = task['taskDefinition']['family']
+    lambda_para['container_name'] = task['taskDefinition']['containerDefinitions'][0]['name']
     lambda_para.update(sys_info)
     file_path = os.path.join(CLOUD_PIPE_TEMPLATES_FOLDER,
             'lambda_run_task_template.txt')
@@ -314,11 +315,11 @@ def get_sys_info():
     '''
     # TODO: need rewrite this function
     info = {}
-    info['image_id'] = 'ami-8f7687e2'
+    info['image_id'] = 'ami-a58760b3'
     info['iam_name'] = 'ecsInstanceRole'
     info['subnet_id'] = 'subnet-d32725fb'
     info['security_group'] = 'default'
-    info['key_pair'] = "wyx-cci"
+    info['key_pair'] = "wyx-aws"
     info['region'] = "us-east-1"
     info['account_id'] = "183351756044"
     return info
@@ -355,14 +356,14 @@ def main():
 
         # generate lambda to trigger ecs
         sys_info = get_sys_info()
-        code = generate_lambda_code_trigger_ecs(image, sys_info, task['taskDefinition']['family'])
+        code = generate_lambda_code_trigger_ecs(image, sys_info, task)
         zipname = os.path.join(CLOUD_PIPE_TMP_FOLDER, step + name_generator.haikunate() + '.zip')
         create_deploy_package(code, zipname)
         lambda_arn = create_lambda_func(zipname, LAMBDA_EXEC_ROLE_NAME)
 
         # build information for lambda_db
         wf_for_lambda['steps'][step] = deepcopy(wf['steps'][step])
-        wf_for_lambda['steps']['run'] = lambda_arn
+        wf_for_lambda['steps'][step]['run'] = lambda_arn
         required_steps[step] = set()
         for key in wf['steps'][step]['inputs']:
             required_steps[step].add(wf['steps'][step]['inputs'][key].split('/')[0][1:])

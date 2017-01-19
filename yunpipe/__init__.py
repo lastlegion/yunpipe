@@ -1,4 +1,5 @@
 import os.path
+import json
 
 from .utils import get_full_path
 from .utils import create_folder
@@ -12,3 +13,17 @@ CLOUD_PIPE_TEMPLATES_FOLDER = os.path.join(os.path.dirname(__file__), 'templates
 create_folder(CLOUD_PIPE_TMP_FOLDER)
 create_folder(CLOUD_PIPE_ALGORITHM_FOLDER)
 create_folder(YUNPIPE_WORKFLOW_FOLDER)
+
+
+def get_workflow_info(name):
+    '''
+    retrieve work flow information using defined work flow name
+    :para: name: the name of the work flow
+    :type: string
+
+    rtype: dictionary
+    '''
+    filepath = os.path.join(YUNPIPE_WORKFLOW_FOLDER, name + '.Workflow')
+    with open(filepath, 'r') as f:
+        res = json.load(f)
+    return res
