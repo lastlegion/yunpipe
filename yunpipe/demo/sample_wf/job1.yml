@@ -1,0 +1,6 @@
+name: job1
+inp:
+  class: File
+  hints:
+    key: nums.txt
+    bucket: container-clouds-input
