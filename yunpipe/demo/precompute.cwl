@@ -1,6 +1,6 @@
 name: precompute
 class: commandLineTool
-baseCommand: [python, compute.py]
+baseCommand: [python3, compute.py]
 label: Example for one step, given a file where each line contains one number, outputs squares and cubes
 inputs:
     - id: inp
@@ -15,7 +15,7 @@ outputs:
       type: FILE
       outputBinding: cb.txt
 hints:
-    - container_name: wangyx2005/precompute_ecs
+    - container_name: wangyx2005/precompute-ecs
     - system: ubuntu
     - work_dir: /tmp/work
 

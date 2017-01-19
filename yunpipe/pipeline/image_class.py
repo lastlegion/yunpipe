@@ -49,6 +49,7 @@ class image:
 
         for var in info['user_specified_environment_variables']:
             self.env_variable[var['name']] = self.variable_class(var)
+        self.env_variable['info'] = self.variable_class({'name': 'info', 'required': True})
 
     def init_all_variables(self, credentials):
         '''
@@ -58,6 +59,7 @@ class image:
         '''
         for name, value in credentials.items():
             self.env_variable[name].init_var(value)
+        self.env_variable['info'].init_var("")
 
     def valid_info(self):
         '''

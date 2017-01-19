@@ -9,8 +9,8 @@ from random import randint
 import boto3.session
 import botocore.exceptions
 
-ALL_INPUTS = '%(inputs)s'
-ALL_OUTPUTS = '%(outputs)s'
+ALL_INPUTS = %(inputs)s
+ALL_OUTPUTS = %(outputs)s
 BASE_COMMAND = '%(baseCommand)s'
 
 MAX_TRY = 5
@@ -174,7 +174,7 @@ def upload_file(para, output_file, outputs_info):
     key = info['jobid'] + '/' + info['step'] + '/' + output_file
     for _ in range(0, MAX_TRY):
         try:
-            s3.upload_file(output_file, bucket, output_file)
+            s3.upload_file(output_file, bucket, key)
             logger.info('uploaded file')
             break
         except botocore.exceptions.ClientError as err:

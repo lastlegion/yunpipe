@@ -1,7 +1,8 @@
 inp = []
 
 with open('input.txt') as f:
-	inp.append(int(f.readline().stripe()))
+    for line in f:
+        inp.append(int(line.strip()))
 
 with open('out.txt', 'w') as f:
-	f.write(str(sum(inp)) + '\n')
+    f.write(str(sum(inp)) + '\n')

@@ -1,4 +1,4 @@
-FROM precompute
+FROM sum
 MAINTAINER Yuxing Wang <wangyx2005@gmail.com>
 
 RUN apt-get update && apt-get install -y \

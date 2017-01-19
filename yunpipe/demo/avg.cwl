@@ -1,6 +1,6 @@
 name: sum
 class: commandLineTool
-baseCommand: [python, compute.py]
+baseCommand: [python3, compute.py]
 label: return the average of input files
 inputs:
     - id: inp
